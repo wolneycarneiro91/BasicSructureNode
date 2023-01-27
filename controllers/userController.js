@@ -91,24 +91,37 @@ const userController = {
         }
     },
     login: async (req, res) => {
-        
-
         const { password, email } = req.body;
         const user = await userModel.findOne({ email: email });
-        const secret = process.env.SECRET;       
+        const secret = process.env.SECRET;
         const checkPassword = await bcrypt.compare(password, user.password);
         if (!user || !checkPassword) {
             return res.status(404).json({ msg: "Credenciais inválidas" });
         }
         try {
             const token = jwt.sign({
-                id:user._id
-            },secret); 
-            return res.status(200).json({ msg: "Autenticado", token:token });
+                id: user._id
+            }, secret);
+            return res.status(200).json({ msg: "Autenticado", token: token });
 
         } catch (error) {
             console.log(error);
         }
+    },
+     checkToken:(req, res, next)=>{
+        const authHeader =req.headers['authorization'];
+        const token = authHeader && authHeader.split(" ")[1];
+        if(!token){
+            return res.status(401).json({ msg: "Acesso negado" });
+        }
+        try{
+            const secret = process.env.SECRET;
+            jwt.verify(token, secret);
+            next();
+        }catch(error){
+            return res.status(400).json({ msg: "Token inválido" });
+        }
+
     }
 };
 
